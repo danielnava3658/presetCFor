@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ruleta de temas · Programación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --white:#ffffff;
+    --bg:#f7f7fa;
+    --ink:#33363d;
+    --ink-soft:#6b6f78;
+    --blue:#b7d3ee;
+    --blue-deep:#7fa8d6;
+    --purple:#d7c9ef;
+    --purple-deep:#a98fd1;
+    --green:#c1e6cd;
+    --green-deep:#7cc394;
+    --gray:#dde1e6;
+    --gray-deep:#aab0ba;
+    --line:#e7e7ec;
+    --shadow: 0 10px 30px rgba(60,60,90,.08);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+  }
+
+  body{
+    min-height:100vh;
+    padding:48px 24px 72px;
+  }
+
+  h1,h2,h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    margin:0;
+  }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+  }
+
+  header.page-head{
+    max-width:640px;
+    margin:0 0 40px;
+  }
+
+  header.page-head h1{
+    font-size:clamp(28px, 4vw, 40px);
+    line-height:1.15;
+    color:var(--ink);
+  }
+
+  header.page-head p{
+    margin:12px 0 0;
+    color:var(--ink-soft);
+    font-size:15.5px;
+    line-height:1.6;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap:28px;
+    align-items:start;
+  }
+
+  @media (max-width: 880px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background:var(--white);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    padding:32px;
+  }
+
+  /* ---------- Ruleta ---------- */
+  .wheel-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:22px;
+  }
+
+  .wheel-stage{
+    position:relative;
+    width:min(420px, 88vw);
+    height:min(420px, 88vw);
+  }
+
+  .pointer{
+    position:absolute;
+    top:-6px;
+    left:50%;
+    transform:translateX(-50%);
+    width:0; height:0;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-top:28px solid var(--ink);
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,.15));
+    z-index:5;
+  }
+
+  .wheel-ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:var(--white);
+    box-shadow: 0 0 0 10px var(--white), 0 0 0 12px var(--line), inset 0 0 0 1px var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  #wheelCanvas{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    transform:rotate(0deg);
+  }
+
+  .hub{
+    position:absolute;
+    top:50%; left:50%;
+    width:64px; height:64px;
+    transform:translate(-50%,-50%);
+    background:var(--white);
+    border-radius:50%;
+    box-shadow: 0 0 0 6px var(--white), 0 2px 8px rgba(0,0,0,.12), inset 0 0 0 1px var(--line);
+    z-index:4;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:center;
+    line-height:1.1;
+  }
+
+  .spin-btn{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    padding:15px 38px;
+    border-radius:999px;
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:15.5px;
+    color:var(--white);
+    background:linear-gradient(135deg, var(--blue-deep), var(--purple-deep));
+    box-shadow:0 8px 20px rgba(127,168,214,.35);
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .spin-btn:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 12px 24px rgba(127,168,214,.42); }
+  .spin-btn:active:not(:disabled){ transform:translateY(0); }
+  .spin-btn:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+
+  .status-line{
+    min-height:20px;
+    font-size:14px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+  .status-line strong{ color:var(--ink); }
+
+  /* ---------- Panel lateral ---------- */
+  .side-col{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+
+  .section-label{
+    font-size:12.5px;
+    letter-spacing:.02em;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+  }
+
+  .people-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+
+  .person{
+    border-radius:16px;
+    border:2px solid var(--line);
+    background:var(--bg);
+    padding:14px 14px 12px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+    position:relative;
+  }
+  .person:hover{ transform:translateY(-1px); }
+
+  .person .name{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:16px;
+    color:var(--ink);
+  }
+
+  .person .count{
+    margin-top:6px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+
+  .person .dots{
+    margin-top:8px;
+    display:flex;
+    gap:5px;
+  }
+  .person .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--line);
+  }
+  .person .dot.filled{ background:var(--blue-deep); }
+
+  .person.selected{
+    border-color:var(--blue-deep);
+    background:#eef5fc;
+  }
+  .person.done{
+    border-color:var(--green-deep);
+    background:#eef8f1;
+    cursor:default;
+  }
+  .person.done .name::after{
+    content:" ✓";
+    color:var(--green-deep);
+  }
+
+  .topics-list{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:230px;
+    overflow-y:auto;
+  }
+  .topics-list li{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:var(--bg);
+    font-size:13.5px;
+  }
+  .topics-list li .tag{
+    font-weight:600;
+    color:var(--ink);
+  }
+  .topics-list li .who{
+    font-size:12px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .topics-list li.pending .who{ color:var(--gray-deep); }
+  .swatch{
+    display:inline-block;
+    width:9px; height:9px;
+    border-radius:50%;
+    margin-right:8px;
+  }
+
+  .reset-btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background:var(--white);
+    color:var(--ink-soft);
+    padding:10px 16px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .reset-btn:hover{ border-color:var(--gray-deep); color:var(--ink); }
+
+  /* ---------- Supabase ---------- */
+  .supa-card summary{
+    cursor:pointer;
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:17px;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .supa-card summary::-webkit-details-marker{ display:none; }
+  .supa-card summary .chevron{
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+    transition:transform .2s ease;
+  }
+  .supa-card[open] summary .chevron{ transform:rotate(180deg); }
+
+  .supa-card p.hint{
+    margin:10px 0 18px;
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+
+  .field{
+    margin-bottom:14px;
+  }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:11px 13px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--bg);
+    font-size:13.5px;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+  }
+  .field input:focus{
+    outline:2px solid var(--blue-deep);
+    outline-offset:1px;
+    background:var(--white);
+  }
+
+  .supa-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .btn-secondary{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    padding:11px 20px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:13.5px;
+    color:var(--white);
+    background:var(--green-deep);
+    transition:opacity .15s ease;
+  }
+  .btn-secondary:hover{ opacity:.9; }
+  .btn-secondary:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .supa-status{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .supa-status.ok{ color:var(--green-deep); }
+  .supa-status.err{ color:#c0577a; }
+
+  code.snippet{
+    display:block;
+    margin-top:10px;
+    padding:12px 14px;
+    background:var(--bg);
+    border-radius:10px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    white-space:pre-wrap;
+    line-height:1.6;
+    font-family: ui-monospace, "SF Mono", monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <h1>Ruleta de temas</h1>
+    <p>Gira la ruleta para repartir los 8 temas del curso entre Daniel, Naomi, Gael y Briceidy — dos temas por persona. Selecciona a alguien de la lista, gira, y el tema que salga queda asignado automáticamente.</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- Ruleta -->
+    <section class="card wheel-card">
+      <div class="wheel-stage">
+        <div class="pointer"></div>
+        <div class="wheel-ring">
+          <canvas id="wheelCanvas" width="640" height="640"></canvas>
+        </div>
+        <div class="hub" id="hub">GIRAR</div>
+      </div>
+
+      <button class="spin-btn" id="spinBtn">Girar la ruleta</button>
+      <div class="status-line" id="statusLine">Selecciona una persona para empezar.</div>
+    </section>
+
+    <!-- Panel lateral -->
+    <div class="side-col">
+
+      <section class="card">
+        <p class="section-label">Personas</p>
+        <div class="people-grid" id="peopleGrid"></div>
+      </section>
+
+      <section class="card">
+        <p class="section-label">Temas &amp; asignaciones</p>
+        <ul class="topics-list" id="topicsList"></ul>
+        <div style="margin-top:16px; text-align:right;">
+          <button class="reset-btn" id="resetBtn">Reiniciar ruleta</button>
+        </div>
+      </section>
+
+      <details class="card supa-card">
+        <summary>Conexión con Supabase <span class="chevron">▾</span></summary>
+        <p class="hint">
+          Opcional: guarda cada asignación en una tabla de Supabase llamada <strong>asignaciones</strong>
+          con columnas <em>persona</em> (text) y <em>tema</em> (text). Tus credenciales solo se usan en este
+          navegador, no se guardan en ningún servidor.
+        </p>
+        <div class="field">
+          <label for="supaUrl">Project URL</label>
+          <input type="text" id="supaUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="supaKey">Anon / public API key</label>
+          <input type="password" id="supaKey" placeholder="eyJhbGciOi..." autocomplete="off" />
+        </div>
+        <div class="supa-actions">
+          <button class="btn-secondary" id="supaSaveBtn">Guardar asignaciones en Supabase</button>
+          <span class="supa-status" id="supaStatus"></span>
+        </div>
+        <code class="snippet">create table asignaciones (
+  id bigint generated always as identity primary key,
+  persona text not null,
+  tema text not null,
+  creado_en timestamp with time zone default now()
+);</code>
+      </details>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  // ---------- Datos base ----------
+  const TOPICS = [
+    "Intro",
+    "Contadores",
+    "Acumuladores",
+    "Flags",
+    "For",
+    "While",
+    "doWhile",
+    "Diagrama de Flujo y Pseudocódigo"
+  ];
+
+  const PEOPLE_NAMES = ["Daniel", "Naomi", "Gael", "Briceidy"];
+  const MAX_PER_PERSON = 2;
+
+  const COLORS = [
+    { fill: "#b7d3ee", deep: "#7fa8d6" }, // azul
+    { fill: "#d7c9ef", deep: "#a98fd1" }, // morado
+    { fill: "#c1e6cd", deep: "#7cc394" }, // verde
+    { fill: "#dde1e6", deep: "#aab0ba" }, // gris
+  ];
+
+  // ---------- Estado ----------
+  let people = PEOPLE_NAMES.map(name => ({ name, count: 0 }));
+  let selectedPerson = null;
+  let remaining = TOPICS.slice();           // temas aún en la ruleta
+  let assignments = [];                     // { tema, persona }
+  let accumulatedRotation = 0;
+  let spinning = false;
+
+  // ---------- Referencias DOM ----------
+  const canvas = document.getElementById("wheelCanvas");
+  const ctx = canvas.getContext("2d");
+  const spinBtn = document.getElementById("spinBtn");
+  const statusLine = document.getElementById("statusLine");
+  const peopleGrid = document.getElementById("peopleGrid");
+  const topicsList = document.getElementById("topicsList");
+  const resetBtn = document.getElementById("resetBtn");
+
+  const size = canvas.width;
+  const center = size / 2;
+  const radius = center - 6;
+
+  // ---------- Dibujar la ruleta ----------
+  function drawWheel(){
+    ctx.clearRect(0, 0, size, size);
+
+    const n = remaining.length;
+    if (n === 0){
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#f2f2f5";
+      ctx.fill();
+      ctx.font = "600 26px Fraunces, serif";
+      ctx.fillStyle = "#9a9ea6";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("¡Completo!", center, center);
+      return;
+    }
+
+    const segAngle = (Math.PI * 2) / n;
+    const startOffset = -Math.PI / 2; // 0 = arriba
+
+    for (let i = 0; i < n; i++){
+      const start = startOffset + i * segAngle;
+      const end = start + segAngle;
+      const color = COLORS[i % COLORS.length];
+
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.arc(center, center, radius, start, end);
+      ctx.closePath();
+      ctx.fillStyle = color.fill;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      // Texto
+      const mid = start + segAngle / 2;
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.rotate(mid);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#33363d";
+      const fontSize = n > 8 ? 15 : 17;
+      ctx.font = "600 " + fontSize + "px Inter, sans-serif";
+      wrapRadialText(remaining[i], radius - 26);
+      ctx.restore();
+    }
+  }
+
+  // Dibuja texto envuelto a lo largo del radio (hasta 2 líneas)
+  function wrapRadialText(text, x){
+    const words = text.split(" ");
+    const lines = [];
+    let current = "";
+    const maxCharsPerLine = 15;
+
+    words.forEach(word => {
+      const test = current ? current + " " + word : word;
+      if (test.length > maxCharsPerLine && current){
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    });
+    if (current) lines.push(current);
+
+    const lineHeight = 18;
+    const totalHeight = (lines.length - 1) * lineHeight;
+    lines.forEach((line, idx) => {
+      const y = -totalHeight / 2 + idx * lineHeight;
+      ctx.fillText(line, x, y);
+    });
+  }
+
+  // ---------- Girar ----------
+  function thetaTopOf(index, n){
+    const segDeg = 360 / n;
+    return index * segDeg + segDeg / 2; // grados en sentido horario desde arriba
+  }
+
+  function spin(){
+    if (spinning) return;
+    if (!selectedPerson){
+      statusLine.textContent = "Primero selecciona una persona.";
+      return;
+    }
+    if (remaining.length === 0){
+      statusLine.textContent = "Ya no quedan temas por asignar.";
+      return;
+    }
+
+    spinning = true;
+    spinBtn.disabled = true;
+    statusLine.innerHTML = "Girando la ruleta para <strong>" + selectedPerson.name + "</strong>…";
+
+    const n = remaining.length;
+    const chosenIndex = Math.floor(Math.random() * n);
+
+    const currentMod = ((accumulatedRotation % 360) + 360) % 360;
+    const desiredMod = (360 - thetaTopOf(chosenIndex, n)) % 360;
+    let delta = (desiredMod - currentMod + 360) % 360;
+    const extraSpins = 6;
+    const totalDelta = delta + extraSpins * 360;
+
+    accumulatedRotation += totalDelta;
+
+    const duration = 4200 + Math.random() * 600;
+    canvas.style.transition = "transform " + duration + "ms cubic-bezier(0.13, 0.69, 0.14, 1)";
+    canvas.style.transform = "rotate(" + accumulatedRotation + "deg)";
+
+    const onEnd = function(e){
+      if (e.propertyName !== "transform") return;
+      canvas.removeEventListener("transitionend", onEnd);
+      finishSpin(chosenIndex);
+    };
+    canvas.addEventListener("transitionend", onEnd);
+  }
+
+  function finishSpin(chosenIndex){
+    const topic = remaining[chosenIndex];
+    remaining.splice(chosenIndex, 1);
+
+    assignments.push({ tema: topic, persona: selectedPerson.name });
+    selectedPerson.count += 1;
+
+    const finishedPerson = selectedPerson.name;
+    const personDone = selectedPerson.count >= MAX_PER_PERSON;
+
+    drawWheel();
+    renderPeople();
+    renderTopics();
+
+    if (remaining.length === 0){
+      statusLine.innerHTML = "🎉 Todos los temas fueron asignados.";
+      selectedPerson = null;
+    } else if (personDone){
+      statusLine.innerHTML = "<strong>" + topic + "</strong> asignado a <strong>" + finishedPerson + "</strong>. Esa persona ya tiene sus 2 temas — elige a otra persona.";
+      selectedPerson = null;
+      renderPeople();
+    } else {
+      statusLine.innerHTML = "<strong>" + topic + "</strong> asignado a <strong>" + finishedPerson + "</strong>. Puedes girar otra vez para " + finishedPerson + " o elegir a otra persona.";
+    }
+
+    spinning = false;
+    spinBtn.disabled = !selectedPerson || remaining.length === 0;
+  }
+
+  // ---------- Panel de personas ----------
+  function renderPeople(){
+    peopleGrid.innerHTML = "";
+    people.forEach(p => {
+      const div = document.createElement("div");
+      const isDone = p.count >= MAX_PER_PERSON;
+      const isSelected = selectedPerson === p;
+      div.className = "person" + (isDone ? " done" : "") + (isSelected ? " selected" : "");
+
+      const dots = Array.from({ length: MAX_PER_PERSON })
+        .map((_, i) => '<span class="dot' + (i < p.count ? " filled" : "") + '"></span>')
+        .join("");
+
+      div.innerHTML =
+        '<div class="name">' + p.name + '</div>' +
+        '<div class="count">' + p.count + ' de ' + MAX_PER_PERSON + ' temas</div>' +
+        '<div class="dots">' + dots + '</div>';
+
+      if (!isDone){
+        div.addEventListener("click", () => {
+          if (spinning) return;
+          selectedPerson = (selectedPerson === p) ? null : p;
+          renderPeople();
+          spinBtn.disabled = !selectedPerson || remaining.length === 0;
+          statusLine.textContent = selectedPerson
+            ? "Listo para girar por " + selectedPerson.name + "."
+            : "Selecciona una persona para empezar.";
+        });
+      }
+      peopleGrid.appendChild(div);
+    });
+  }
+
+  // ---------- Lista de temas ----------
+  function renderTopics(){
+    topicsList.innerHTML = "";
+    TOPICS.forEach((topic, i) => {
+      const assigned = assignments.find(a => a.tema === topic);
+      const li = document.createElement("li");
+      li.className = assigned ? "assigned" : "pending";
+      const color = COLORS[i % COLORS.length].deep;
+      li.innerHTML =
+        '<span class="tag"><span class="swatch" style="background:' + color + '"></span>' + topic + '</span>' +
+        '<span class="who">' + (assigned ? assigned.persona : "pendiente") + '</span>';
+      topicsList.appendChild(li);
+    });
+  }
+
+  // ---------- Reiniciar ----------
+  function resetAll(){
+    people = PEOPLE_NAMES.map(name => ({ name, count: 0 }));
+    selectedPerson = null;
+    remaining = TOPICS.slice();
+    assignments = [];
+    accumulatedRotation = 0;
+    canvas.style.transition = "none";
+    canvas.style.transform = "rotate(0deg)";
+    spinning = false;
+    spinBtn.disabled = true;
+    statusLine.textContent = "Selecciona una persona para empezar.";
+    drawWheel();
+    renderPeople();
+    renderTopics();
+  }
+
+  // ---------- Supabase ----------
+  const supaUrlInput = document.getElementById("supaUrl");
+  const supaKeyInput = document.getElementById("supaKey");
+  const supaSaveBtn = document.getElementById("supaSaveBtn");
+  const supaStatus = document.getElementById("supaStatus");
+
+  supaSaveBtn.addEventListener("click", async () => {
+    const url = supaUrlInput.value.trim().replace(/\/+$/, "");
+    const key = supaKeyInput.value.trim();
+
+    if (!url || !key){
+      supaStatus.textContent = "Ingresa la URL y la API key de tu proyecto Supabase.";
+      supaStatus.className = "supa-status err";
+      return;
+    }
+    if (assignments.length === 0){
+      supaStatus.textContent = "Todavía no hay asignaciones que guardar.";
+      supaStatus.className = "supa-status err";
+      return;
+    }
+
+    supaSaveBtn.disabled = true;
+    supaStatus.textContent = "Guardando…";
+    supaStatus.className = "supa-status";
+
+    try {
+      const rows = assignments.map(a => ({ persona: a.persona, tema: a.tema }));
+      const res = await fetch(url + "/rest/v1/asignaciones", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": key,
+          "Authorization": "Bearer " + key,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(rows)
+      });
+
+      if (!res.ok){
+        const text = await res.text();
+        throw new Error("HTTP " + res.status + ": " + text);
+      }
+
+      supaStatus.textContent = "Guardado en Supabase (" + rows.length + " registros).";
+      supaStatus.className = "supa-status ok";
+    } catch (err){
+      supaStatus.textContent = "Error al guardar: " + err.message;
+      supaStatus.className = "supa-status err";
+    } finally {
+      supaSaveBtn.disabled = false;
+    }
+  });
+
+  // ---------- Init ----------
+  spinBtn.addEventListener("click", spin);
+  resetBtn.addEventListener("click", resetAll);
+  resetAll();
+
+})();
+</script>
+</body>
+</html>
